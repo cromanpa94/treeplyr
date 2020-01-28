@@ -18,17 +18,38 @@
 #' @export
 #' 
 
-trees<-list(anolis$phy, anolis$phy)
+a1<-anolis$phy
+a1$tip.label[1]<-"NA"
+trees<-list(a1, anolis$phy)
 class(trees)<-"multiPhylo"
 
 phy=trees
 data=anolis$dat
 
+
+test<-make.treedata(phy=trees, data=data[-c(5:10),])
+str(test)
+
 make.treedata <- function(phy, data, name_column="detect") {
-  if(class(phy) %in%   c("phylo", "multiPhylo") ){}else{ stop("tree must be of class 'phylo' or 'multiPhylo'")}
+  if(class(phy) %in%  c("phylo", "multiPhylo") ){}else{ 
+    stop("tree must be of class 'phylo' or 'multiPhylo'")
+    }
   
-  ##Use only the first tree of the multiphylo (if needed)
-  if(class(phy) =="multiPhylo"){tree <-phy[[1]]}else{tree<-phy}
+  if(class(phy) =="multiPhylo"){
+    outersect <- function(x, y) {
+      sort(c(setdiff(x, y),
+             setdiff(y, x)))
+    }
+    
+   totaltips<-lapply(phy, function(x) x$tip.label)
+   diff_tips<-Reduce(outersect,totaltips)
+
+    new_phy<-  lapply(phy,ape::drop.tip,tip=c(diff_tips))
+    class(new_phy)<-"multiPhylo"
+    tree <-phy[[1]]
+  }else{
+      tree<-phy
+      }
   
   if(is.vector(data)){
     data <- as.matrix(data)
@@ -70,8 +91,8 @@ make.treedata <- function(phy, data, name_column="detect") {
     dat <- dat[, clnm, drop=FALSE]   
     dat.label <- as.character(as.data.frame(data)[[name_column]])
   }
-  data_not_tree <- setdiff(dat.label, tree$tip.label)
-  tree_not_data <- setdiff(tree$tip.label, dat.label)
+  tree_not_data <- setdiff(dat.label, tree$tip.label) ##Note that these two objects were flipped before
+  data_not_tree <- setdiff(tree$tip.label, dat.label)
   tree <- drop.tip(tree, tree_not_data)
   dat <- dat[dat.label %in% tree$tip.label,]
   dat.label <- dat.label[dat.label %in% tree$tip.label]
@@ -83,15 +104,20 @@ make.treedata <- function(phy, data, name_column="detect") {
   ...my.order... <- match(dat.label, tree$tip.label)
   dat <- dplyr::arrange(dat, ...my.order...)
   
-  if(class(tree)== "phylo"){
-    td <- list(phy=phy, dat=dat)
+  if(class(phy)== "phylo"){
+    td <- list(phy=tree, dat=dat)
   }else{
     
-    ##I should just do the same for each of the trees in the multiphylo
+    targettree<-phy[[-1]]
     
-    phy
-    tree
+    ntrees<-if(class(targettree) == "phylo" ){
+      drop.tip(targettree, tree_not_data) 
+    }else{
+        lapply(phy[[-1]],ape::drop.tip,tip=c(tree_not_data))
+      }
     
+    phy<-list(tree, ntrees)
+    class(phy)<-"multiPhylo"
     td <- list(phy=phy, dat=dat)
     
   }
