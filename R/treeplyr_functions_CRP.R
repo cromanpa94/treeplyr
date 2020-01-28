@@ -172,12 +172,12 @@ mutate_.treedata <- function(.data, ..., .dots){
 slice_.treedata <- function(.data, ..., .dots){
   dots <- lazyeval::all_dots(.dots, ..., all_named=TRUE)
   if(class(.data$phy) == "phylo"){
-    data$dat$labelTEMP0123 <- .data$phy$tip.label
+    data$dat<-add_column(.data$dat,"labelTEMP0123" = data$phy[[1]]$tip.label)
   }else{
-    data$dat$labelTEMP0123 <- .data$phy[[1]]$tip.label
+    data$dat<-add_column(data$dat,"labelTEMP0123" = data$phy[[1]]$tip.label)
   }
   
-  dat <- slice_(.data$dat, .dots = dots)
+  dat <- slice_(data$dat, .dots = dots)
   #row.names(dat) <- attributes(.data)$tip.label
   .data <- make.treedata(phy=.data$phy, dat)
   return(.data)
