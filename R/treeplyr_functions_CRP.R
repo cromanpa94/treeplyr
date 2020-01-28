@@ -27,8 +27,8 @@ phy=trees
 data=anolis$dat
 
 
-test<-make.treedata(phy=trees, data=data[-c(5:10),])
-str(test)
+td<-make.treedata(phy=trees, data=data[-c(5:10),])
+str(td)
 
 make.treedata <- function(phy, data, name_column="detect") {
   if(class(phy) %in%  c("phylo", "multiPhylo") ){}else{ 
@@ -44,8 +44,8 @@ make.treedata <- function(phy, data, name_column="detect") {
    totaltips<-lapply(phy, function(x) x$tip.label)
    diff_tips<-Reduce(outersect,totaltips)
 
-    new_phy<-  lapply(phy,ape::drop.tip,tip=c(diff_tips))
-    class(new_phy)<-"multiPhylo"
+    phy<-  lapply(phy,ape::drop.tip,tip=c(diff_tips))
+    class(phy)<-"multiPhylo"
     tree <-phy[[1]]
   }else{
       tree<-phy
@@ -93,7 +93,7 @@ make.treedata <- function(phy, data, name_column="detect") {
   }
   tree_not_data <- setdiff(dat.label, tree$tip.label) ##Note that these two objects were flipped before
   data_not_tree <- setdiff(tree$tip.label, dat.label)
-  tree <- drop.tip(tree, tree_not_data)
+  tree <- drop.tip(tree, c(data_not_tree,tree_not_data))
   dat <- dat[dat.label %in% tree$tip.label,]
   dat.label <- dat.label[dat.label %in% tree$tip.label]
   if(any(duplicated(dat.label))){
@@ -111,9 +111,9 @@ make.treedata <- function(phy, data, name_column="detect") {
     targettree<-phy[[-1]]
     
     ntrees<-if(class(targettree) == "phylo" ){
-      drop.tip(targettree, tree_not_data) 
+      drop.tip(targettree, c(data_not_tree,tree_not_data) )
     }else{
-        lapply(phy[[-1]],ape::drop.tip,tip=c(tree_not_data))
+        lapply(phy[[-1]],ape::drop.tip,tip=c(data_not_tree,tree_not_data))
       }
     
     phy<-list(tree, ntrees)
@@ -171,10 +171,15 @@ mutate_.treedata <- function(.data, ..., .dots){
 #' @export
 slice_.treedata <- function(.data, ..., .dots){
   dots <- lazyeval::all_dots(.dots, ..., all_named=TRUE)
-  .data$dat$labelTEMP0123 <- .data$phy$tip.label
+  if(class(.data$phy) == "phylo"){
+    data$dat$labelTEMP0123 <- .data$phy$tip.label
+  }else{
+    data$dat$labelTEMP0123 <- .data$phy[[1]]$tip.label
+  }
+  
   dat <- slice_(.data$dat, .dots = dots)
   #row.names(dat) <- attributes(.data)$tip.label
-  .data <- make.treedata(.data$phy, dat)
+  .data <- make.treedata(phy=.data$phy, dat)
   return(.data)
 }
 
