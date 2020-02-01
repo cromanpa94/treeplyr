@@ -295,16 +295,20 @@ filter_.treedata <- function(.data, ...){
 #' @examples
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
-#' summarize(td, ntips = length(phy$tip.label), meanSVL = mean(SVL), sdSVL = sd(SVL))
-#' tdGrouped <- group_by(td, ecomorph)
-#' summarize(tdGrouped, ntips = length(phy$tip.label), 
-#'    totalBL = sum(phy$edge.length), meanSVL = mean(SVL), sdSVL = sd(SVL))
+ summarize(td, ntips = length(phy[[1]]$tip.label), meanSVL = mean(SVL), sdSVL = sd(SVL))
+ tdGrouped <- group_by(td, ecomorph)
+ summarize(tdGrouped, ntips = length(phy[[1]]$tip.label), 
+    totalBL = sum(phy[[1]]$edge.length), meanSVL = mean(SVL), sdSVL = sd(SVL))
 #' @export
 summarise.treedata <- function(.data, ...){
   env <- new.env(parent = parent.frame(), size = 1L)
   env$phy <- .data$phy
   env$dat <- as.data.frame(.data$dat)
-  env$tip.label <- .data$phy$tip.label
+  env$tip.label <- if(class(.data$phy)=='phylo'){
+  .data$phy$tip.label
+  }else{
+    .data$phy[[1]]$tip.label
+  }
   dots <- quos(...)
   for(i in 1:length(dots)){
     attributes(dots[[i]])$.Environment <- env
@@ -329,9 +333,9 @@ summarise.treedata <- function(.data, ...){
 # data(anolis)
 # td <- make.treedata(anolis$phy, anolis$dat)
 # summarize(td, ntips = length(phy$tip.label), meanSVL = mean(SVL), sdSVL = sd(SVL))
-# tdGrouped <- group_by(td, ecomorph)
-# summarize(tdGrouped, ntips = length(phy$tip.label), 
-#    totalBL = sum(phy$edge.length), meanSVL = mean(SVL), sdSVL = sd(SVL))
+ tdGrouped <- group_by(td, ecomorph)
+summarize(tdGrouped, ntips = length(phy[[1]]$tip.label), 
+    totalBL = sum(phy[[1]]$edge.length), meanSVL = mean(SVL), sdSVL = sd(SVL))
 # @export
 #summarise_.treedata <- function(.data, ..., .dots=list()){
   #if(is.null(list(substitute(...))[[1]])) stop("No expression provided to summarize data")
@@ -354,13 +358,29 @@ summarise.grouped_treedata <- function(.data, ...){
   #if(is.null(list(substitute(...))[[1]])) stop("No expression provided to summarize data")
   dots <- quos(...)
   #lazyeval::all_dots(.dots, ..., all_named = TRUE)
+  tip.labels <- if(class(.data$phy)=='phylo'){.data$phy$tip.label}else{.data$phy[[1]]$tip.label}
+  
   nind <- (1:nrow(.data$dat))
   group_levels <- group_data(.data$dat)[[1]]
   group_by_var <- group_vars(.data$dat)
   group_index <- group_indices(.data$dat)
-  phys <- lapply(group_levels, function(x) drop.tip(.data$phy, which(!(group_index %in% as.numeric(x)))))
+  
+  if(class(.data$phy)=='phylo'){
+    phys <- lapply(group_levels, function(x) drop.tip(.data$phy, which(!(group_index %in% as.numeric(x)))))
+    
+  }else{
+    
+    phys <- lapply(group_levels, function(x){
+      rt<-lapply(.data$phy,ape::drop.tip,tip=which(!(group_index %in% as.numeric(x))))
+      class(rt)<-'multiPhylo'
+      rt
+    }) 
+    
+  }
+  
+  
   dat <- as.data.frame(.data$dat)
-  rownames(dat) <- attributes(.data)$tip.label
+  rownames(dat) <- tip.labels
   dats <- lapply(phys, function(x) make.treedata(x, dat)$dat)
   envs <- lapply(group_levels, function(x){e <- new.env(parent=parent.frame(), size=1L);
                                                       e$phy <- phys[[x]];
@@ -395,12 +415,14 @@ summarise.grouped_treedata <- function(.data, ...){
 #' @examples
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
-#' tdGrouped <- group_by(td, ecomorph)
-#' summarize(tdGrouped, ntips = length(phy$tip.label), 
-#'    totalBL = sum(phy$edge.length), meanSVL = mean(SVL), sdSVL = sd(SVL))
+ tdGrouped <- group_by(td, ecomorph)
+ summarize(tdGrouped, ntips = length(phy$tip.label), 
+    totalBL = sum(phy$edge.length), meanSVL = mean(SVL), sdSVL = sd(SVL))
 #' @export
-group_by_.treedata <- function(.data, ..., add=FALSE){
-  groups <- group_by_prepare(.data$dat, ..., add = add)
+group_by_.treedata <- function(.data, ..., add=F){
+  
+  dots <- enquos(...)
+  dat <- .data %>%  group_by(!!! dots, add = add)
   dat <- grouped_df(groups$data, groups$groups)
   .data$dat <- dat
   class(.data) <- c("grouped_treedata", "treedata", "list")
