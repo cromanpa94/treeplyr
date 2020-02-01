@@ -450,10 +450,11 @@ reorder <- function(tdObject, ...){
 #' @examples
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
-#' td <- reorder(td, "postorder")
+ td <- reorder(td, "postorder")
 #' @export
 reorder.treedata <- function(tdObject, order="postorder", index.only=FALSE, ...){
   dat.attr <- attributes(tdObject$dat)
+  if(class(tdObject$phy) == 'phy'){
   phy <- reorder(tdObject$phy, order, index.only)#, ...)
   index <- match(tdObject$phy$tip.label, phy$tip.label)
   tdObject$dat <- tdObject$dat[index,]
@@ -461,6 +462,17 @@ reorder.treedata <- function(tdObject, order="postorder", index.only=FALSE, ...)
   #attributes(tdObject$dat)$row.names 
   attributes(tdObject)$tip.label <- phy$tip.label
   tdObject$phy <- phy
+  }else{
+   phy<- lapply(1:length(tdObject$phy),   function(x) reorder(tdObject$phy[[x]], order, index.only))
+   class(phy)<-'multiPhylo'
+   index <- match(tdObject$phy[[1]]$tip.label, phy[[1]]$tip.label)
+   tdObject$dat <- tdObject$dat[index,]
+   attributes(tdObject$dat) <-dat.attr
+   #attributes(tdObject$dat)$row.names 
+   attributes(tdObject)$tip.label <- phy[[1]]$tip.label
+   tdObject$phy <- phy
+  }
+  
   if(index.only){
     return(index)
   } else {
