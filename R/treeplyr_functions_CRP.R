@@ -1,3 +1,10 @@
+library(plyr)
+library(tibble)
+library(ape)
+library(geiger)
+library(dplyr)
+library(lazyeval)
+
 #' Function for making an object of class \code{treedata}
 #' 
 #' This function generates an object of class \code{treedata} that ensures that the ordering of tip labels 
@@ -18,6 +25,7 @@
 #' @export
 #' 
 
+data(anolis)
 a1<-anolis$phy
 a1$tip.label[1]<-"NA"
 trees<-list(a1, anolis$phy)
@@ -28,7 +36,6 @@ data=anolis$dat
 
 
 td<-make.treedata(phy=trees, data=data[-c(5:10),])
-str(td)
 
 make.treedata <- function(phy, data, name_column="detect") {
   if(class(phy) %in%  c("phylo", "multiPhylo") ){}else{ 
@@ -144,11 +151,11 @@ make.treedata <- function(phy, data, name_column="detect") {
 #' @examples
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
-#' tdmutate <- mutate(td, lnSVL = log(SVL), badassery = awesomeness + hostility)
+ tdmutate <- mutate_(td, lnSVL = log(SVL), badassery = awesomeness + hostility)
 #' @export
-mutate_.treedata <- function(.data, ..., .dots){
-  dots <- lazyeval::all_dots(.dots, ..., all_named=TRUE)
-  dat <- mutate_(.data$dat, .dots = dots)
+mutate_.treedata <- function(.data, ...){
+  dots <- enquos(...)
+  dat <- .data$dat %>%  mutate(!!! dots)
   #row.names(dat) <- attributes(.data)$tip.label
   .data$dat <- dat
   return(.data)
@@ -166,20 +173,23 @@ mutate_.treedata <- function(.data, ..., .dots){
 #' @examples
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
-#' tdslice <- slice(td, 1:5)
+ tdslice <- slice_(td, 1:5)
 #' tdslice
 #' @export
-slice_.treedata <- function(.data, ..., .dots){
-  dots <- lazyeval::all_dots(.dots, ..., all_named=TRUE)
+
+slice_.treedata <- function(.data, ...){
+  dots <- enquos(...)
   if(class(.data$phy) == "phylo"){
-    data$dat<-add_column(.data$dat,"labelTEMP0123" = data$phy[[1]]$tip.label)
+    labs<-.data$phy$tip.label
+    .data$dat<-add_column(.data$dat,"labelTEMP0123" = labs)
   }else{
-    data$dat<-add_column(data$dat,"labelTEMP0123" = data$phy[[1]]$tip.label)
+    labs<-.data$phy[[1]]$tip.label
+    .data$dat<-add_column(.data$dat,"labelTEMP0123" = labs)
   }
   
-  dat <- slice_(data$dat, .dots = dots)
+  dat <- .data$dat %>%  slice(!!! dots)
   #row.names(dat) <- attributes(.data)$tip.label
-  .data <- make.treedata(phy=.data$phy, dat)
+  .data <- make.treedata(phy=.data$phy, data=dat)
   return(.data)
 }
 
@@ -198,11 +208,13 @@ slice_.treedata <- function(.data, ..., .dots){
 #' @examples
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
-#' tdselect <- select(td, SVL, awesomeness)
+tdselect <- select(td, SVL, awesomeness)
 #' @export
-select_.treedata <- function(.data, ..., .dots = list()){
+select_.treedata <- function(.data, ...){
+   dots <- enquos(...)
    dat <- .data$dat
-  .data$dat <- select_(dat, ..., .dots=.dots)
+   .data$dat <- dat %>%  select_(!!! dots)
+   
   return(.data)
 }
 
@@ -219,7 +231,7 @@ select_.treedata <- function(.data, ..., .dots = list()){
 #' @examples
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
-#' tdselect <- select(td, SVL, awesomeness)
+ tdselect <- select(td, SVL, awesomeness)
 #' @export
 select.treedata <- function(.data, ...){
   #dots <- all_dots(.dots, ...)
@@ -244,18 +256,27 @@ select.treedata <- function(.data, ...){
 #' @examples
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat, name_column=1)
-#' tdfilter <- filter(td, island=="Cuba", SVL > 3.5)
+ tdfilter <- filter_(td, island=="Cuba", SVL > 3.5)
 #' @export
-filter_.treedata <- function(.data, ..., .dots){
-  dots <- lazyeval::all_dots(.dots, ...)
-  tip.labels <- attributes(.data)$tip.label
-  .data$dat <- mutate(.data$dat, tip.label=tip.labels)
-  dat <- filter_(.data$dat, .dots = dots)
-  .data$dat <- dat
+filter_.treedata <- function(.data, ...){
+  dots <- enquos(...)
+  tip.labels <- if(class(.data$phy)=='phylo'){.data$phy$tip.label}else{.data$phy[[1]]$tip.label}
+  .data$dat<-add_column(.data$dat,"tip.label" = tip.labels)
+  
+  .data$dat <- .data$dat %>%  filter(!!! dots)
   attributes(.data)$tip.label <- .data$dat$tip.label
   nc <- ncol(.data$dat)
   .data$dat <- select(.data$dat, 1:(nc-1))
-  .data$phy <- drop.tip(.data$phy, .data$phy$tip.label[!(.data$phy$tip.label %in% attributes(.data)$tip.label)])
+  
+  .data$phy <- if(class(.data$phy)=='multiPhylo'){
+     to_drop<-.data$phy[[1]]$tip.label[!(.data$phy[[1]]$tip.label %in% attributes(.data)$tip.label)]
+     pts<-lapply(.data$phy,ape::drop.tip,tip=to_drop)
+     class(pts)<-'multiPhylo'
+     pts
+  }else{
+    drop.tip(.data$phy, .data$phy$tip.label[!(.data$phy$tip.label %in% attributes(.data)$tip.label)])
+  }
+  
   #attributes(.data$dat)$row.names <- .data$phy$tip.label
   return(.data)
 }
