@@ -760,13 +760,14 @@ forceFactor <- function(tdObject, return.factor=TRUE) {
 
 #' @rdname mutate_.treedata
 #' @export
-mutate_.grouped_treedata <- function(.data, ..., .dots){
-  dots <- all_dots(.dots, ..., all_named=TRUE)
-  dat <- mutate_(.data$dat, .dots = dots)
+mutate_.grouped_treedata <- function(.data, ...){
+  dots <- enquos(...)
+  dat <- .data$dat %>%  mutate_(!!! dots)
   #row.names(dat) <- .data$phy$tip.label
   .data$dat <- dat
   return(.data)
 }
+mutate(tdGrouped, lnSVL = log(SVL), badassery = awesomeness + hostility)
 
 #' @rdname filter_.treedata
 #' @export
@@ -804,6 +805,8 @@ filter_.grouped_treedata <- function(.data, ...){
 
 filter_(tdGrouped, island=="Cuba", SVL > 3.5)
 filter_(td, island=="Cuba", SVL > 3.5)
+
+mutate(tdGrouped, island=="Cuba", SVL > 3.5)
 
 
 #' Add regimes to a treedata object
@@ -883,15 +886,19 @@ ungroup.grouped_treedata <- function(x, ...){
   if(length(res) != nrow(y)){
     stop("Use '[' for selecting multiple columns")
   } 
-  return(setNames(res, x$phy$tip.label))
+  labs<-if(class(x$phy)=='phylo'){x$phy$tip.label}else{x$phy[[1]]$tip.label}
+  return(setNames(res, labs))
 }
+
+td[['island']]
 
 #' @export
 '[.treedata' <- function(x, i, j, drop=FALSE, tip.label=FALSE){
   if(!tip.label){
     y <- as.data.frame(x$dat)
   } else {
-    y <- as.data.frame(cbind(tip.label= x$phy$tip.label, x$dat))
+    labs<-if(class(x$phy)=='phylo'){x$phy$tip.label}else{x$phy[[1]]$tip.label}
+    y <- as.data.frame(cbind(tip.label= labs, x$dat))
     if(!missing(j)){
       if(is.numeric(j)){
         j <- c(1, j+1)
@@ -930,6 +937,9 @@ ungroup.grouped_treedata <- function(x, ...){
   attr(y, "row.names") <- .set_row_names(nr)
   res <- .as_data_frame.data.frame(y)
 }
+
+td[c('island','SVL')]
+
 
 #' .check_names_df function from tibble package
 #' @keywords internal
