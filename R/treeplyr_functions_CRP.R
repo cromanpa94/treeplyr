@@ -588,8 +588,8 @@ treedply <- function(tdObject, ...){
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
 #' treedply(td, geiger::fitContinuous(phy, getVector(td, SVL), model="BM", ncores=1))
-#' treedply(td, phytools::phylosig(phy, getVector(td, awesomeness), "lambda", test=TRUE))
-#' treedply(td, phytools::phenogram(phy, getVector(td, SVL), ftype="off", spread.labels=FALSE))
+treedply.treedata(td, phytools::phylosig(phy, getVector(td, awesomeness), "lambda", test=TRUE))
+treedply.treedata(td, phytools::phenogram(phy, getVector(td, SVL), ftype="off", spread.labels=FALSE))
 #' @export
 treedply.treedata <- function(tdObject, ...){
   if(!is.call(substitute(...))){
@@ -597,10 +597,25 @@ treedply.treedata <- function(tdObject, ...){
   } else {
     call <- substitute(...)
   }
-  env <- new.env(parent = parent.frame(), size = 1L)
-  env$phy <- tdObject$phy
-  env$dat <- tdObject$dat
-  out <- eval(call, env)
+  
+  if(class(tdObject$phy) == 'phylo'){
+    env <- new.env(parent = parent.frame(), size = 1L)
+    env$phy <- tdObject$phy
+    env$dat <- tdObject$dat
+    out <- eval(call, env)
+  }else{
+    
+  out<-lapply(seq_along(tdObject$phy) , function(x){
+      env <- new.env(parent = parent.frame(), size = 1L)
+      env$phy <- tdObject$phy[[x]]
+      env$dat <- tdObject$dat
+      out <- eval(call, env)
+    })
+  names(out)<-paste0('Tree_',seq_along(tdObject$phy))
+    
+  }
+  
+  
   if(is.null(out)){
     invisible()
   } else {
