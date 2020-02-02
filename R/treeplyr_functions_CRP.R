@@ -537,11 +537,13 @@ treeply.treedata <- function(tdObject, FUN, ...){
 #' @examples
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
-#' td %>% forceNumeric(.) %>% tdapply(., 2, phytools::phylosig, tree=phy)
+ td %>% forceNumeric(.) %>% tdapply(., 2, phytools::phylosig, tree=phy)
 #' @export
 tdapply <- function(tdObject, MARGIN, FUN, ...){
   if(!class(tdObject)[1]=="treedata") stop("Object is not of class 'treedata'")
   FUN <- match.fun(FUN)
+  
+  if(class(tdObject$phy) == 'phy'){
   phy <- tdObject$phy
   env <- new.env(parent=parent.frame(), size=1L)
   env$phy <- tdObject$phy
@@ -549,6 +551,19 @@ tdapply <- function(tdObject, MARGIN, FUN, ...){
   rownames(dat) <- phy$tip.label
   #rownames(dat) <- tdObject$phy$tip.label
   res <- eval(substitute(apply(dat, MARGIN, FUN, ...)), env)
+  }else{
+    res <- list()
+  for(x in seq_along(tdObject$phy)){ #Lapply has issues when dealing with different environments
+    phy <- tdObject$phy[[x]]
+    env <- new.env(parent=parent.frame(), size=1L)
+    env$phy <- tdObject$phy[[x]]
+    dat <- as.matrix(tdObject$dat)
+    rownames(dat) <- phy$tip.label
+    #rownames(dat) <- tdObject$phy$tip.label
+    res[[x]] <- eval(substitute(apply(dat, MARGIN, FUN, ...)), env)
+  }
+  }
+  
   return(res)
 }
 
