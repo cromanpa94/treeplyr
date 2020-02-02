@@ -262,7 +262,7 @@ filter_.treedata <- function(.data, ...){
   dots <- enquos(...)
   tip.labels <- if(class(.data$phy)=='phylo'){.data$phy$tip.label}else{.data$phy[[1]]$tip.label}
   .data$dat<-add_column(.data$dat,"tip.label" = tip.labels)
-  
+
   .data$dat <- .data$dat %>%  filter(!!! dots)
   attributes(.data)$tip.label <- .data$dat$tip.label
   nc <- ncol(.data$dat)
@@ -770,18 +770,41 @@ mutate_.grouped_treedata <- function(.data, ..., .dots){
 
 #' @rdname filter_.treedata
 #' @export
-filter_.grouped_treedata <- function(.data, ..., .dots){
-  dots <- all_dots(.dots, ...)
+filter_.grouped_treedata <- function(.data, ...){
+  dots <- enquos(...)
   cl <- class(.data$dat)
-  .data$dat$tip.label <- .data$phy$tip.label
-  dat <- filter_(.data$dat, .dots = dots)
-  .data$dat <- dat
-  attributes(.data)$tip.label <- .data$dat$tip.label
-  .data$dat <- select(.data$dat, 1:(ncol(.data$dat)-1))
-  class(.data$dat) <- cl
-  .data$phy <- drop.tip(.data$phy, .data$phy$tip.label[!(.data$phy$tip.label %in% attributes(.data)$tip.label)])
+  
+  if(class(.data$phy)=='phylo'){
+    .data$dat$tip.label <- .data$phy$tip.label
+    dat <- .data$dat %>%  filter(!!! dots)
+    .data$dat <- dat
+    attributes(.data)$tip.label <- .data$dat$tip.label
+    .data$dat <- select(.data$dat, 1:(ncol(.data$dat)-1))
+    class(.data$dat) <- cl
+    .data$phy <- drop.tip(.data$phy, .data$phy$tip.label[!(.data$phy$tip.label %in% attributes(.data)$tip.label)])
+  }else{
+    
+  res<- lapply(seq_along(.data$phy), function(x){
+      .data$dat$tip.label <- .data$phy[[x]]$tip.label
+      dat <- .data$dat %>%  filter(!!! dots)
+      .data$dat <- dat
+      attributes(.data)$tip.label <- .data$dat$tip.label
+      .data$dat <- select(.data$dat, 1:(ncol(.data$dat)-1))
+      class(.data$dat) <- cl
+      drop.tip(.data$phy[[x]], .data$phy[[x]]$tip.label[!(.data$phy[[x]]$tip.label %in% attributes(.data)$tip.label)])
+    })
+  class(res)<-'multiPhylo'  
+    .data$phy<-res
+  }
+  
+  
+  
   return(.data)
 }
+
+filter_(tdGrouped, island=="Cuba", SVL > 3.5)
+filter_(td, island=="Cuba", SVL > 3.5)
+
 
 #' Add regimes to a treedata object
 #' 
