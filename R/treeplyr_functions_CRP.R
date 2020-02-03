@@ -1,8 +1,8 @@
-library(plyr)
 library(tibble)
 library(ape)
-library(geiger)
 library(dplyr)
+library(phytools)
+library(Rcpp)
 
 #' Function for making an object of class \code{treedata}
 #' 
@@ -690,7 +690,7 @@ summary.treedata <- function(object, ...){
 #' @export
 forceNumeric <- function(tdObject, return.numeric=TRUE) {
   valid <- which(sapply(tdObject$dat, is.numeric))
-  all_of(valid)
+  
   if(length(valid) < ncol(tdObject$dat)){
     if(length(valid)==0){
       warning("Dataset does not contain any numeric data") 
