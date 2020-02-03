@@ -16,8 +16,9 @@ Imports:
     Rcpp (>= 0.10.3),
     phytools,
     geiger,
-    tibble
+    tibble,
+    lazyeval
 LinkingTo: Rcpp
 URL: https://github.com/uyedaj/treeplyr
 BugReports: https://github.com/uyedaj/treeplyr/issues
-RoxygenNote: 6.1.1
+RoxygenNote: 7.0.2

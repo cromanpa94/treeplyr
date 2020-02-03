@@ -3,7 +3,7 @@
 #' This function generates an object of class \code{treedata} that ensures that the ordering of tip labels 
 #' and data remain intact. The object can be manipulated using \code{dplyr} functions.
 #' 
-#' @param tree An object of class 'phylo'
+#' @param phy An object of class 'phylo' or 'multiPhylo
 #' @param data A data frame or matrix
 #' @param name_column An optional argument that specifies the column of \code{data} that contains the 
 #' names to be matched to the tree. By default, it is set to "detect" which finds the column with the 
@@ -15,9 +15,39 @@
 #' @examples
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
+#' 
+#' data(anolis)
+#' a1<-anolis$phy
+#' a1$tip.label[1]<-"NA"
+#' trees<-list(a1, anolis$phy)
+#' class(trees)<-"multiPhylo"
+#' phy=trees
+#' data=anolis$dat
+#' td<-make.treedata(phy=trees, data=data[-c(5:10),])
 #' @export
-make.treedata <- function(tree, data, name_column="detect") {
-  if(class(tree)!="phylo") stop("tree must be of class 'phylo'")
+
+
+make.treedata <- function(phy, data, name_column="detect") {
+  if(class(phy) %in%  c("phylo", "multiPhylo") ){}else{ 
+    stop("tree must be of class 'phylo' or 'multiPhylo'")
+    }
+  
+  if(class(phy) =="multiPhylo"){
+    outersect <- function(x, y) {
+      sort(c(setdiff(x, y),
+             setdiff(y, x)))
+    }
+    
+   totaltips<-lapply(phy, function(x) x$tip.label)
+   diff_tips<-Reduce(outersect,totaltips)
+
+    phy<-  lapply(phy,ape::drop.tip,tip=c(diff_tips))
+    class(phy)<-"multiPhylo"
+    tree <-phy[[1]]
+  }else{
+      tree<-phy
+      }
+  
   if(is.vector(data)){
     data <- as.matrix(data)
     colnames(data) <- "trait"
@@ -42,7 +72,7 @@ make.treedata <- function(tree, data, name_column="detect") {
       name_column <- which(name_column==coln)[1]
     }
   }
-  dat <- tbl_df(as.data.frame(lapply(1:ncol(data), function(x) 
+  dat <- tibble::as_tibble(as.data.frame(lapply(1:ncol(data), function(x) 
     type.convert(apply(data[,x, drop=FALSE], 1, as.character)))))
   colnames(dat) <- coln
   if(name_column==0){
@@ -58,19 +88,37 @@ make.treedata <- function(tree, data, name_column="detect") {
     dat <- dat[, clnm, drop=FALSE]   
     dat.label <- as.character(as.data.frame(data)[[name_column]])
   }
-  data_not_tree <- setdiff(dat.label, tree$tip.label)
-  tree_not_data <- setdiff(tree$tip.label, dat.label)
-  phy <- drop.tip(tree, tree_not_data)
-  dat <- filter(dat, dat.label %in% phy$tip.label)
-  dat.label <- dat.label[dat.label %in% phy$tip.label]
+  tree_not_data <- setdiff(dat.label, tree$tip.label) ##Note that these two objects were flipped before
+  data_not_tree <- setdiff(tree$tip.label, dat.label)
+  tree <- drop.tip(tree, c(data_not_tree,tree_not_data))
+  dat <- dat[dat.label %in% tree$tip.label,]
+  dat.label <- dat.label[dat.label %in% tree$tip.label]
   if(any(duplicated(dat.label))){
     warning("Duplicated data in dataset, selecting first unique entry for each species")
-    dat <- filter(dat, !duplicated(dat.label))
+    dat <- dat[ !duplicated(dat.label),]
     dat.label <- dat.label[!duplicated(dat.label)]
   }
-  ...my.order... <- match(dat.label, phy$tip.label)
-  dat <- arrange(dat, ...my.order...)
-  td <- list(phy=phy, dat=dat)
+  ...my.order... <- match(dat.label, tree$tip.label)
+  dat <- dplyr::arrange(dat, ...my.order...)
+  
+  if(class(phy)== "phylo"){
+    td <- list(phy=tree, dat=dat)
+  }else{
+    
+    targettree<-phy[[-1]]
+    
+    ntrees<-if(class(targettree) == "phylo" ){
+      drop.tip(targettree, c(data_not_tree,tree_not_data) )
+    }else{
+        lapply(phy[[-1]],ape::drop.tip,tip=c(data_not_tree,tree_not_data))
+      }
+    
+    phy<-list(tree, ntrees)
+    class(phy)<-"multiPhylo"
+    td <- list(phy=phy, dat=dat)
+    
+  }
+  
   class(td) <- c("treedata", "list")
   attributes(td)$tip.label <- phy$tip.label
   #attributes(td$dat)$row.names <- phy$tip.label
@@ -87,17 +135,16 @@ make.treedata <- function(tree, data, name_column="detect") {
 #' @aliases mutate.treedata mutate.grouped_treedata mutate_.grouped_treedata
 #' @param .data An object of class \code{treedata}
 #' @param ... Arguments to mutate the treedata object
-#' @param .dots Used to work around non-standard evaluation. See \code{vignette}("nse") for details.
 #' @return An object of class \code{treedata} with new data added. 
 #' @seealso \code{\link{mutate}}
 #' @examples
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
-#' tdmutate <- mutate(td, lnSVL = log(SVL), badassery = awesomeness + hostility)
+#'  tdmutate <- mutate(td, lnSVL = log(SVL), badassery = awesomeness + hostility)
 #' @export
-mutate_.treedata <- function(.data, ..., .dots){
-  dots <- lazyeval::all_dots(.dots, ..., all_named=TRUE)
-  dat <- mutate_(.data$dat, .dots = dots)
+mutate.treedata <- function(.data, ...){
+  dots <- enquos(...)
+  dat <- .data$dat %>%  mutate(!!! dots)
   #row.names(dat) <- attributes(.data)$tip.label
   .data$dat <- dat
   return(.data)
@@ -109,21 +156,28 @@ mutate_.treedata <- function(.data, ..., .dots){
 #' 
 #' @param .data An object of class \code{treedata}
 #' @param ... Integer row values
-#' @param .dots Pair/values of expressions coercible to lazy objects.
 #' @return An object of class \code{treedata}. 
 #' @seealso \code{\link{slice}}
 #' @examples
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
-#' tdslice <- slice(td, 1:5)
+#'  tdslice <- slice(td, 1:5)
 #' tdslice
 #' @export
-slice_.treedata <- function(.data, ..., .dots){
-  dots <- lazyeval::all_dots(.dots, ..., all_named=TRUE)
-  .data$dat$labelTEMP0123 <- .data$phy$tip.label
-  dat <- slice_(.data$dat, .dots = dots)
+
+slice.treedata <- function(.data, ...){
+  dots <- enquos(...)
+  if(class(.data$phy) == "phylo"){
+    labs<-.data$phy$tip.label
+    .data$dat<-tibble::add_column(.data$dat,"labelTEMP0123" = labs)
+  }else{
+    labs<-.data$phy[[1]]$tip.label
+    .data$dat<-tibble::add_column(.data$dat,"labelTEMP0123" = labs)
+  }
+  
+  dat <- .data$dat %>%  slice(!!! dots)
   #row.names(dat) <- attributes(.data)$tip.label
-  .data <- make.treedata(.data$phy, dat)
+  .data <- make.treedata(phy=.data$phy, data=dat)
   return(.data)
 }
 
@@ -136,7 +190,6 @@ slice_.treedata <- function(.data, ..., .dots){
 #' @aliases select_.grouped_treedata
 #' @param .data An object of class \code{treedata}
 #' @param ... Additional arguments to select columns
-#' @param .dots Used to work around non-standard evaluation. See \code{vignette}("nse") for details.
 #' @return An object of class \code{treedata} with specified variables selected. 
 #' @seealso \code{\link{select}}
 #' @examples
@@ -144,9 +197,11 @@ slice_.treedata <- function(.data, ..., .dots){
 #' td <- make.treedata(anolis$phy, anolis$dat)
 #' tdselect <- select(td, SVL, awesomeness)
 #' @export
-select_.treedata <- function(.data, ..., .dots = list()){
+select.treedata <- function(.data, ...){
+   dots <- enquos(...)
    dat <- .data$dat
-  .data$dat <- select_(dat, ..., .dots=.dots)
+   .data$dat <- dat %>%  select(!!! dots)
+   
   return(.data)
 }
 
@@ -163,7 +218,7 @@ select_.treedata <- function(.data, ..., .dots = list()){
 #' @examples
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
-#' tdselect <- select(td, SVL, awesomeness)
+#'  tdselect <- select(td, SVL, awesomeness)
 #' @export
 select.treedata <- function(.data, ...){
   #dots <- all_dots(.dots, ...)
@@ -182,24 +237,32 @@ select.treedata <- function(.data, ...){
 #' @aliases filter.treedata filter_.grouped_treedata filter.grouped_treedata
 #' @param .data An object of class \code{treedata}
 #' @param ... Additional arguments to filter by 
-#' @param .dots Used to work around non-standard evaluation. See \code{vignette}("nse") for details.
 #' @return An object of class \code{treedata} with the dataset filtered by the specified criteria.
 #' @seealso \code{\link{filter}}
 #' @examples
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat, name_column=1)
-#' tdfilter <- filter(td, island=="Cuba", SVL > 3.5)
+#'  tdfilter <- filter(td, island=="Cuba", SVL > 3.5)
 #' @export
-filter_.treedata <- function(.data, ..., .dots){
-  dots <- lazyeval::all_dots(.dots, ...)
-  tip.labels <- attributes(.data)$tip.label
-  .data$dat <- mutate(.data$dat, tip.label=tip.labels)
-  dat <- filter_(.data$dat, .dots = dots)
-  .data$dat <- dat
+filter.treedata <- function(.data, ...){
+  dots <- enquos(...)
+  tip.labels <- if(class(.data$phy)=='phylo'){.data$phy$tip.label}else{.data$phy[[1]]$tip.label}
+  .data$dat<- tibble::add_column(.data$dat,"tip.label" = tip.labels)
+
+  .data$dat <- .data$dat %>%  filter(!!! dots)
   attributes(.data)$tip.label <- .data$dat$tip.label
   nc <- ncol(.data$dat)
   .data$dat <- select(.data$dat, 1:(nc-1))
-  .data$phy <- drop.tip(.data$phy, .data$phy$tip.label[!(.data$phy$tip.label %in% attributes(.data)$tip.label)])
+  
+  .data$phy <- if(class(.data$phy)=='multiPhylo'){
+     to_drop<-.data$phy[[1]]$tip.label[!(.data$phy[[1]]$tip.label %in% attributes(.data)$tip.label)]
+     pts<-lapply(.data$phy,ape::drop.tip,tip=to_drop)
+     class(pts)<-'multiPhylo'
+     pts
+  }else{
+    drop.tip(.data$phy, .data$phy$tip.label[!(.data$phy$tip.label %in% attributes(.data)$tip.label)])
+  }
+  
   #attributes(.data$dat)$row.names <- .data$phy$tip.label
   return(.data)
 }
@@ -218,16 +281,31 @@ filter_.treedata <- function(.data, ..., .dots){
 #' @examples
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
-#' summarize(td, ntips = length(phy$tip.label), meanSVL = mean(SVL), sdSVL = sd(SVL))
-#' tdGrouped <- group_by(td, ecomorph)
-#' summarize(tdGrouped, ntips = length(phy$tip.label), 
-#'    totalBL = sum(phy$edge.length), meanSVL = mean(SVL), sdSVL = sd(SVL))
+#'  summarize(td, ntips = length(phy[[1]]$tip.label), meanSVL = mean(SVL), sdSVL = sd(SVL))
+#'  tdGrouped <- group_by(td, ecomorph)
+#'  summarize(tdGrouped, ntips = length(phy$tip.label), 
+#'     totalBL = sum(phy$edge.length), meanSVL = mean(SVL), sdSVL = sd(SVL))
+#' 
+#' #For multiPhylo
+#'
+#'  phy=list(anolis$phy,anolis$phy)
+#'  class(phy)<-'multiPhylo
+#'  td <- make.treedata(phy, anolis$dat)
+#'  summarize(td, ntips = length(phy[[1]]$tip.label), meanSVL = mean(SVL), sdSVL = sd(SVL))
+#'  tdGrouped <- group_by(td, ecomorph)
+#'  summarize(tdGrouped, ntips = length(phy[[1]]$tip.label), 
+#'     totalBL = sum(phy[[1]]$edge.length), meanSVL = mean(SVL), sdSVL = sd(SVL))
+#'     
 #' @export
 summarise.treedata <- function(.data, ...){
   env <- new.env(parent = parent.frame(), size = 1L)
   env$phy <- .data$phy
   env$dat <- as.data.frame(.data$dat)
-  env$tip.label <- .data$phy$tip.label
+  env$tip.label <- if(class(.data$phy)=='phylo'){
+  .data$phy$tip.label
+  }else{
+    .data$phy[[1]]$tip.label
+  }
   dots <- quos(...)
   for(i in 1:length(dots)){
     attributes(dots[[i]])$.Environment <- env
@@ -252,9 +330,9 @@ summarise.treedata <- function(.data, ...){
 # data(anolis)
 # td <- make.treedata(anolis$phy, anolis$dat)
 # summarize(td, ntips = length(phy$tip.label), meanSVL = mean(SVL), sdSVL = sd(SVL))
-# tdGrouped <- group_by(td, ecomorph)
-# summarize(tdGrouped, ntips = length(phy$tip.label), 
-#    totalBL = sum(phy$edge.length), meanSVL = mean(SVL), sdSVL = sd(SVL))
+#'  tdGrouped <- group_by(td, ecomorph)
+#' summarize(tdGrouped, ntips = length(phy[[1]]$tip.label), 
+#'     totalBL = sum(phy[[1]]$edge.length), meanSVL = mean(SVL), sdSVL = sd(SVL))
 # @export
 #summarise_.treedata <- function(.data, ..., .dots=list()){
   #if(is.null(list(substitute(...))[[1]])) stop("No expression provided to summarize data")
@@ -277,13 +355,29 @@ summarise.grouped_treedata <- function(.data, ...){
   #if(is.null(list(substitute(...))[[1]])) stop("No expression provided to summarize data")
   dots <- quos(...)
   #lazyeval::all_dots(.dots, ..., all_named = TRUE)
+  tip.labels <- if(class(.data$phy)=='phylo'){.data$phy$tip.label}else{.data$phy[[1]]$tip.label}
+  
   nind <- (1:nrow(.data$dat))
   group_levels <- group_data(.data$dat)[[1]]
   group_by_var <- group_vars(.data$dat)
   group_index <- group_indices(.data$dat)
-  phys <- lapply(group_levels, function(x) drop.tip(.data$phy, which(!(group_index %in% as.numeric(x)))))
+  
+  if(class(.data$phy)=='phylo'){
+    phys <- lapply(group_levels, function(x) drop.tip(.data$phy, which(!(group_index %in% as.numeric(x)))))
+    
+  }else{
+    
+    phys <- lapply(group_levels, function(x){
+      rt<-lapply(.data$phy,ape::drop.tip,tip=which(!(group_index %in% as.numeric(x))))
+      class(rt)<-'multiPhylo'
+      rt
+    }) 
+    
+  }
+  
+  
   dat <- as.data.frame(.data$dat)
-  rownames(dat) <- attributes(.data)$tip.label
+  rownames(dat) <- tip.labels
   dats <- lapply(phys, function(x) make.treedata(x, dat)$dat)
   envs <- lapply(group_levels, function(x){e <- new.env(parent=parent.frame(), size=1L);
                                                       e$phy <- phys[[x]];
@@ -311,20 +405,29 @@ summarise.grouped_treedata <- function(.data, ...){
 #' @param ... The name of the grouping factor.
 #' @param add By default, when add = FALSE, group_by will override existing groups. 
 #' To instead add to the existing groups, use add = TRUE
-#' @param x An object of class \code{treedata}
 #' @details Groups the data frame and phylogeny by one of the factors in the data table.
 #' @return An object of class \code{grouped_treedata}. 
 #' @seealso \code{\link{summarize}}
 #' @examples
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
-#' tdGrouped <- group_by(td, ecomorph)
-#' summarize(tdGrouped, ntips = length(phy$tip.label), 
-#'    totalBL = sum(phy$edge.length), meanSVL = mean(SVL), sdSVL = sd(SVL))
+#'  tdGrouped <- group_by(td, ecomorph)
+#'  summarize(tdGrouped, ntips = length(phy[[1]]$tip.label), 
+#'     totalBL = sum(phy$edge.length), meanSVL = mean(SVL), sdSVL = sd(SVL))
+#'     
+#' #For multiPhylo
+#'
+#'  phy=list(anolis$phy,anolis$phy)
+#'  class(phy)<-'multiPhylo
+#'  td <- make.treedata(phy, anolis$dat)
+#'  tdGrouped <- group_by(td, ecomorph)
+#'  summarize(tdGrouped, ntips = length(phy[[1]]$tip.label), 
+#'     totalBL = sum(phy[[1]]$edge.length), meanSVL = mean(SVL), sdSVL = sd(SVL))
+#'     
 #' @export
-group_by_.treedata <- function(.data, ..., add=FALSE){
-  groups <- group_by_prepare(.data$dat, ..., add = add)
-  dat <- grouped_df(groups$data, groups$groups)
+group_by.treedata <- function(.data, ..., add=F){
+  dots <- quos(...)
+  dat <- .data$dat %>%  group_by(!!! dots, add=add)
   .data$dat <- dat
   class(.data) <- c("grouped_treedata", "treedata", "list")
   return(.data)
@@ -351,10 +454,11 @@ reorder <- function(tdObject, ...){
 #' @examples
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
-#' td <- reorder(td, "postorder")
+#'  td <- reorder(td, "postorder")
 #' @export
 reorder.treedata <- function(tdObject, order="postorder", index.only=FALSE, ...){
   dat.attr <- attributes(tdObject$dat)
+  if(class(tdObject$phy) == 'phylo'){
   phy <- reorder(tdObject$phy, order, index.only)#, ...)
   index <- match(tdObject$phy$tip.label, phy$tip.label)
   tdObject$dat <- tdObject$dat[index,]
@@ -362,6 +466,17 @@ reorder.treedata <- function(tdObject, order="postorder", index.only=FALSE, ...)
   #attributes(tdObject$dat)$row.names 
   attributes(tdObject)$tip.label <- phy$tip.label
   tdObject$phy <- phy
+  }else{
+   phy<- lapply(1:length(tdObject$phy),   function(x) reorder(tdObject$phy[[x]], order, index.only))
+   class(phy)<-'multiPhylo'
+   index <- match(tdObject$phy[[1]]$tip.label, phy[[1]]$tip.label)
+   tdObject$dat <- tdObject$dat[index,]
+   attributes(tdObject$dat) <-dat.attr
+   #attributes(tdObject$dat)$row.names 
+   attributes(tdObject)$tip.label <- phy[[1]]$tip.label
+   tdObject$phy <- phy
+  }
+  
   if(index.only){
     return(index)
   } else {
@@ -426,11 +541,13 @@ treeply.treedata <- function(tdObject, FUN, ...){
 #' @examples
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
-#' td %>% forceNumeric(.) %>% tdapply(., 2, phytools::phylosig, tree=phy)
+#'  td %>% forceNumeric(.) %>% tdapply(., 2, phytools::phylosig, tree=phy)
 #' @export
 tdapply <- function(tdObject, MARGIN, FUN, ...){
   if(!class(tdObject)[1]=="treedata") stop("Object is not of class 'treedata'")
   FUN <- match.fun(FUN)
+  
+  if(class(tdObject$phy) == 'phylo'){
   phy <- tdObject$phy
   env <- new.env(parent=parent.frame(), size=1L)
   env$phy <- tdObject$phy
@@ -438,6 +555,19 @@ tdapply <- function(tdObject, MARGIN, FUN, ...){
   rownames(dat) <- phy$tip.label
   #rownames(dat) <- tdObject$phy$tip.label
   res <- eval(substitute(apply(dat, MARGIN, FUN, ...)), env)
+  }else{
+    res <- list()
+  for(x in seq_along(tdObject$phy)){ #Lapply has issues when dealing with different environments
+    phy <- tdObject$phy[[x]]
+    env <- new.env(parent=parent.frame(), size=1L)
+    env$phy <- tdObject$phy[[x]]
+    dat <- as.matrix(tdObject$dat)
+    rownames(dat) <- phy$tip.label
+    #rownames(dat) <- tdObject$phy$tip.label
+    res[[x]] <- eval(substitute(apply(dat, MARGIN, FUN, ...)), env)
+  }
+  }
+  
   return(res)
 }
 
@@ -471,10 +601,25 @@ treedply.treedata <- function(tdObject, ...){
   } else {
     call <- substitute(...)
   }
-  env <- new.env(parent = parent.frame(), size = 1L)
-  env$phy <- tdObject$phy
-  env$dat <- tdObject$dat
-  out <- eval(call, env)
+  
+  if(class(tdObject$phy) == 'phylo'){
+    env <- new.env(parent = parent.frame(), size = 1L)
+    env$phy <- tdObject$phy
+    env$dat <- tdObject$dat
+    out <- eval(call, env)
+  }else{
+    
+  out<-lapply(seq_along(tdObject$phy) , function(x){
+      env <- new.env(parent = parent.frame(), size = 1L)
+      env$phy <- tdObject$phy[[x]]
+      env$dat <- tdObject$dat
+      out <- eval(call, env)
+    })
+  names(out)<-paste0('Tree_',seq_along(tdObject$phy))
+    
+  }
+  
+  
   if(is.null(out)){
     invisible()
   } else {
@@ -549,6 +694,7 @@ summary.treedata <- function(object, ...){
 #' @export
 forceNumeric <- function(tdObject, return.numeric=TRUE) {
   valid <- which(sapply(tdObject$dat, is.numeric))
+  
   if(length(valid) < ncol(tdObject$dat)){
     if(length(valid)==0){
       warning("Dataset does not contain any numeric data") 
@@ -619,9 +765,9 @@ forceFactor <- function(tdObject, return.factor=TRUE) {
 
 #' @rdname mutate_.treedata
 #' @export
-mutate_.grouped_treedata <- function(.data, ..., .dots){
-  dots <- all_dots(.dots, ..., all_named=TRUE)
-  dat <- mutate_(.data$dat, .dots = dots)
+mutate_.grouped_treedata <- function(.data, ...){
+  dots <- enquos(...)
+  dat <- .data$dat %>%  mutate_(!!! dots)
   #row.names(dat) <- .data$phy$tip.label
   .data$dat <- dat
   return(.data)
@@ -629,16 +775,35 @@ mutate_.grouped_treedata <- function(.data, ..., .dots){
 
 #' @rdname filter_.treedata
 #' @export
-filter_.grouped_treedata <- function(.data, ..., .dots){
-  dots <- all_dots(.dots, ...)
+filter.grouped_treedata <- function(.data, ...){
+  dots <- enquos(...)
   cl <- class(.data$dat)
-  .data$dat$tip.label <- .data$phy$tip.label
-  dat <- filter_(.data$dat, .dots = dots)
-  .data$dat <- dat
-  attributes(.data)$tip.label <- .data$dat$tip.label
-  .data$dat <- select(.data$dat, 1:(ncol(.data$dat)-1))
-  class(.data$dat) <- cl
-  .data$phy <- drop.tip(.data$phy, .data$phy$tip.label[!(.data$phy$tip.label %in% attributes(.data)$tip.label)])
+  
+  if(class(.data$phy)=='phylo'){
+    .data$dat$tip.label <- .data$phy$tip.label
+    dat <- .data$dat %>%  filter(!!! dots)
+    .data$dat <- dat
+    attributes(.data)$tip.label <- .data$dat$tip.label
+    .data$dat <- select(.data$dat, 1:(ncol(.data$dat)-1))
+    class(.data$dat) <- cl
+    .data$phy <- drop.tip(.data$phy, .data$phy$tip.label[!(.data$phy$tip.label %in% attributes(.data)$tip.label)])
+  }else{
+    
+  res<- lapply(seq_along(.data$phy), function(x){
+      .data$dat$tip.label <- .data$phy[[x]]$tip.label
+      dat <- .data$dat %>%  filter(!!! dots)
+      .data$dat <- dat
+      attributes(.data)$tip.label <- .data$dat$tip.label
+      .data$dat <- select(.data$dat, 1:(ncol(.data$dat)-1))
+      class(.data$dat) <- cl
+      drop.tip(.data$phy[[x]], .data$phy[[x]]$tip.label[!(.data$phy[[x]]$tip.label %in% attributes(.data)$tip.label)])
+    })
+  class(res)<-'multiPhylo'  
+    .data$phy<-res
+  }
+  
+  
+  
   return(.data)
 }
 
@@ -719,7 +884,8 @@ ungroup.grouped_treedata <- function(x, ...){
   if(length(res) != nrow(y)){
     stop("Use '[' for selecting multiple columns")
   } 
-  return(setNames(res, x$phy$tip.label))
+  labs<-if(class(x$phy)=='phylo'){x$phy$tip.label}else{x$phy[[1]]$tip.label}
+  return(setNames(res, labs))
 }
 
 #' @export
@@ -727,7 +893,8 @@ ungroup.grouped_treedata <- function(x, ...){
   if(!tip.label){
     y <- as.data.frame(x$dat)
   } else {
-    y <- as.data.frame(cbind(tip.label= x$phy$tip.label, x$dat))
+    labs<-if(class(x$phy)=='phylo'){x$phy$tip.label}else{x$phy[[1]]$tip.label}
+    y <- as.data.frame(cbind(tip.label= labs, x$dat))
     if(!missing(j)){
       if(is.numeric(j)){
         j <- c(1, j+1)

@@ -2,9 +2,12 @@
 % Please edit documentation in R/treeplyr_functions.R
 \name{select.treedata}
 \alias{select.treedata}
+\alias{select_.grouped_treedata}
 \alias{select.grouped_treedata}
 \title{Function for selecting columns from an object of class \code{treedata}}
 \usage{
+\method{select}{treedata}(.data, ...)
+
 \method{select}{treedata}(.data, ...)
 }
 \arguments{
@@ -14,8 +17,13 @@
 }
 \value{
 An object of class \code{treedata} with specified variables selected.
+
+An object of class \code{treedata} with specified variables selected.
 }
 \description{
+This function can be used to select a subset of variables (columns) from a treedata object; 
+see \code{\link{select}}.
+
 This function can be used to select a subset of variables (columns) from a treedata object; 
 see \code{\link{select}}.
 }
@@ -23,7 +31,12 @@ see \code{\link{select}}.
 data(anolis)
 td <- make.treedata(anolis$phy, anolis$dat)
 tdselect <- select(td, SVL, awesomeness)
+data(anolis)
+td <- make.treedata(anolis$phy, anolis$dat)
+ tdselect <- select(td, SVL, awesomeness)
 }
 \seealso{
+\code{\link{select}}
+
 \code{\link{select_}}
 }

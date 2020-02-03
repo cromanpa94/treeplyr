@@ -27,5 +27,5 @@ then it will be substituted with the \code{treedata} object \code{$phy}.
 \examples{
 data(anolis)
 td <- make.treedata(anolis$phy, anolis$dat)
-td \%>\% forceNumeric(.) \%>\% tdapply(., 2, phytools::phylosig, tree=phy)
+ td \%>\% forceNumeric(.) \%>\% tdapply(., 2, phytools::phylosig, tree=phy)
 }

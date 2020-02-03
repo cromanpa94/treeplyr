@@ -4,10 +4,10 @@
 \alias{make.treedata}
 \title{Function for making an object of class \code{treedata}}
 \usage{
-make.treedata(tree, data, name_column = "detect")
+make.treedata(phy, data, name_column = "detect")
 }
 \arguments{
-\item{tree}{An object of class 'phylo'}
+\item{phy}{An object of class 'phylo' or 'multiPhylo}
 
 \item{data}{A data frame or matrix}
 
@@ -28,4 +28,13 @@ and data remain intact. The object can be manipulated using \code{dplyr} functio
 \examples{
 data(anolis)
 td <- make.treedata(anolis$phy, anolis$dat)
+
+data(anolis)
+a1<-anolis$phy
+a1$tip.label[1]<-"NA"
+trees<-list(a1, anolis$phy)
+class(trees)<-"multiPhylo"
+phy=trees
+data=anolis$dat
+td<-make.treedata(phy=trees, data=data[-c(5:10),])
 }
