@@ -3,7 +3,6 @@ library(tibble)
 library(ape)
 library(geiger)
 library(dplyr)
-library(lazyeval)
 
 #' Function for making an object of class \code{treedata}
 #' 
@@ -151,9 +150,9 @@ make.treedata <- function(phy, data, name_column="detect") {
 #' @examples
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
- tdmutate <- mutate_(td, lnSVL = log(SVL), badassery = awesomeness + hostility)
+ tdmutate <- mutate(td, lnSVL = log(SVL), badassery = awesomeness + hostility)
 #' @export
-mutate_.treedata <- function(.data, ...){
+mutate.treedata <- function(.data, ...){
   dots <- enquos(...)
   dat <- .data$dat %>%  mutate(!!! dots)
   #row.names(dat) <- attributes(.data)$tip.label
@@ -173,11 +172,11 @@ mutate_.treedata <- function(.data, ...){
 #' @examples
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
- tdslice <- slice_(td, 1:5)
+ tdslice <- slice(td, 1:5)
 #' tdslice
 #' @export
 
-slice_.treedata <- function(.data, ...){
+slice.treedata <- function(.data, ...){
   dots <- enquos(...)
   if(class(.data$phy) == "phylo"){
     labs<-.data$phy$tip.label
@@ -210,10 +209,10 @@ slice_.treedata <- function(.data, ...){
 #' td <- make.treedata(anolis$phy, anolis$dat)
 tdselect <- select(td, SVL, awesomeness)
 #' @export
-select_.treedata <- function(.data, ...){
+select.treedata <- function(.data, ...){
    dots <- enquos(...)
    dat <- .data$dat
-   .data$dat <- dat %>%  select_(!!! dots)
+   .data$dat <- dat %>%  select(!!! dots)
    
   return(.data)
 }
@@ -256,9 +255,9 @@ select.treedata <- function(.data, ...){
 #' @examples
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat, name_column=1)
- tdfilter <- filter_(td, island=="Cuba", SVL > 3.5)
+ tdfilter <- filter(td, island=="Cuba", SVL > 3.5)
 #' @export
-filter_.treedata <- function(.data, ...){
+filter.treedata <- function(.data, ...){
   dots <- enquos(...)
   tip.labels <- if(class(.data$phy)=='phylo'){.data$phy$tip.label}else{.data$phy[[1]]$tip.label}
   .data$dat<-add_column(.data$dat,"tip.label" = tip.labels)
@@ -399,6 +398,9 @@ summarise.grouped_treedata <- function(.data, ...){
   return(OUT)
 }
 
+summarize(tdGrouped, ntips = length(phy[[1]]$tip.label), 
+          totalBL = sum(phy[[1]]$edge.length), meanSVL = mean(SVL), sdSVL = sd(SVL))
+
 #' Function for grouping an object of class \code{treedata}
 #' 
 #' This function can be used to group a treedata object by some factor. 
@@ -416,14 +418,12 @@ summarise.grouped_treedata <- function(.data, ...){
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
  tdGrouped <- group_by(td, ecomorph)
- summarize(tdGrouped, ntips = length(phy$tip.label), 
-    totalBL = sum(phy$edge.length), meanSVL = mean(SVL), sdSVL = sd(SVL))
+ summarize(tdGrouped, ntips = length(phy[[1]]$tip.label), 
+    totalBL = sum(phy[[1]]$edge.length), meanSVL = mean(SVL), sdSVL = sd(SVL))
 #' @export
-group_by_.treedata <- function(.data, ..., add=F){
-  
-  dots <- enquos(...)
-  dat <- .data %>%  group_by(!!! dots, add = add)
-  dat <- grouped_df(groups$data, groups$groups)
+group_by.treedata <- function(.data, ..., add=F){
+  dots <- quos(...)
+  dat <- .data$dat %>%  group_by(ecomorph, add=add)
   .data$dat <- dat
   class(.data) <- c("grouped_treedata", "treedata", "list")
   return(.data)
@@ -690,6 +690,7 @@ summary.treedata <- function(object, ...){
 #' @export
 forceNumeric <- function(tdObject, return.numeric=TRUE) {
   valid <- which(sapply(tdObject$dat, is.numeric))
+  all_of(valid)
   if(length(valid) < ncol(tdObject$dat)){
     if(length(valid)==0){
       warning("Dataset does not contain any numeric data") 
@@ -771,7 +772,7 @@ mutate(tdGrouped, lnSVL = log(SVL), badassery = awesomeness + hostility)
 
 #' @rdname filter_.treedata
 #' @export
-filter_.grouped_treedata <- function(.data, ...){
+filter.grouped_treedata <- function(.data, ...){
   dots <- enquos(...)
   cl <- class(.data$dat)
   
@@ -803,8 +804,8 @@ filter_.grouped_treedata <- function(.data, ...){
   return(.data)
 }
 
-filter_(tdGrouped, island=="Cuba", SVL > 3.5)
-filter_(td, island=="Cuba", SVL > 3.5)
+filter(tdGrouped, island=="Cuba", SVL > 3.5)
+filter(td, island=="Cuba", SVL > 3.5)
 
 mutate(tdGrouped, island=="Cuba", SVL > 3.5)
 
@@ -890,7 +891,7 @@ ungroup.grouped_treedata <- function(x, ...){
   return(setNames(res, labs))
 }
 
-td[['island']]
+td[['ecomorph']]
 
 #' @export
 '[.treedata' <- function(x, i, j, drop=FALSE, tip.label=FALSE){
