@@ -16,14 +16,14 @@
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
 #' 
+#' #Using multiPhylo objects
+#' 
 #' data(anolis)
 #' a1<-anolis$phy
 #' a1$tip.label[1]<-"NA"
 #' trees<-list(a1, anolis$phy)
 #' class(trees)<-"multiPhylo"
-#' phy=trees
-#' data=anolis$dat
-#' td<-make.treedata(phy=trees, data=data[-c(5:10),])
+#' td<-make.treedata(phy=trees, data=anolis$dat[-c(5:10),])
 #' @export
 
 
@@ -141,7 +141,18 @@ make.treedata <- function(phy, data, name_column="detect") {
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
 #'  tdmutate <- mutate(td, lnSVL = log(SVL), badassery = awesomeness + hostility)
+#'  
+#' #Using multiPhylo objects
+#' 
+#' data(anolis)
+#' a1<-anolis$phy
+#' a1$tip.label[1]<-"NA"
+#' trees<-list(a1, anolis$phy)
+#' class(trees)<-"multiPhylo"
+#' td<-make.treedata(phy=trees, data=anolis$dat[-c(5:10),])
+#' tdmutate <- mutate(td, lnSVL = log(SVL), badassery = awesomeness + hostility)
 #' @export
+
 mutate.treedata <- function(.data, ...){
   dots <- enquos(...)
   dat <- .data$dat %>%  mutate(!!! dots)
@@ -161,8 +172,17 @@ mutate.treedata <- function(.data, ...){
 #' @examples
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
-#'  tdslice <- slice(td, 1:5)
-#' tdslice
+#' tdslice <- slice(td, 1:5)
+#' 
+#' #Using multiPhylo objects
+#' 
+#' data(anolis)
+#' a1<-anolis$phy
+#' a1$tip.label[1]<-"NA"
+#' trees<-list(a1, anolis$phy)
+#' class(trees)<-"multiPhylo"
+#' td<-make.treedata(phy=trees, data=anolis$dat[-c(5:10),])
+#' tdslice <- slice(td, 1:5)
 #' @export
 
 slice.treedata <- function(.data, ...){
@@ -196,6 +216,15 @@ slice.treedata <- function(.data, ...){
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
 #' tdselect <- select(td, SVL, awesomeness)
+#' #Using multiPhylo objects
+#' 
+#' data(anolis)
+#' a1<-anolis$phy
+#' a1$tip.label[1]<-"NA"
+#' trees<-list(a1, anolis$phy)
+#' class(trees)<-"multiPhylo"
+#' td<-make.treedata(phy=trees, data=anolis$dat[-c(5:10),])
+#' tdselect <- select(td, SVL, awesomeness)
 #' @export
 select.treedata <- function(.data, ...){
    dots <- enquos(...)
@@ -218,7 +247,16 @@ select.treedata <- function(.data, ...){
 #' @examples
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
-#'  tdselect <- select(td, SVL, awesomeness)
+#' tdselect <- select(td, SVL, awesomeness)
+#' #Using multiPhylo objects
+#' 
+#' data(anolis)
+#' a1<-anolis$phy
+#' a1$tip.label[1]<-"NA"
+#' trees<-list(a1, anolis$phy)
+#' class(trees)<-"multiPhylo"
+#' td<-make.treedata(phy=trees, data=anolis$dat[-c(5:10),])
+#' tdselect <- select(td, SVL, awesomeness)
 #' @export
 select.treedata <- function(.data, ...){
   #dots <- all_dots(.dots, ...)
@@ -242,7 +280,16 @@ select.treedata <- function(.data, ...){
 #' @examples
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat, name_column=1)
-#'  tdfilter <- filter(td, island=="Cuba", SVL > 3.5)
+#' tdfilter <- filter(td, island=="Cuba", SVL > 3.5)
+#' #Using multiPhylo objects
+#' 
+#' data(anolis)
+#' a1<-anolis$phy
+#' a1$tip.label[1]<-"NA"
+#' trees<-list(a1, anolis$phy)
+#' class(trees)<-"multiPhylo"
+#' td<-make.treedata(phy=trees, data=anolis$dat[-c(5:10),])
+#' tdfilter <- filter(td, island=="Cuba", SVL > 3.5)
 #' @export
 filter.treedata <- function(.data, ...){
   dots <- enquos(...)
@@ -454,7 +501,17 @@ reorder <- function(tdObject, ...){
 #' @examples
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
-#'  td <- reorder(td, "postorder")
+#' td <- reorder(td, "postorder")
+#' 
+#' #Using multiPhylo objects
+#' 
+#' data(anolis)
+#' a1<-anolis$phy
+#' a1$tip.label[1]<-"NA"
+#' trees<-list(a1, anolis$phy)
+#' class(trees)<-"multiPhylo"
+#' td<-make.treedata(phy=trees, data=anolis$dat[-c(5:10),])
+#' td <- reorder(td, "postorder")
 #' @export
 reorder.treedata <- function(tdObject, order="postorder", index.only=FALSE, ...){
   dat.attr <- attributes(tdObject$dat)
@@ -594,6 +651,16 @@ treedply <- function(tdObject, ...){
 #' treedply(td, geiger::fitContinuous(phy, getVector(td, SVL), model="BM", ncores=1))
 #' treedply(td, phytools::phylosig(phy, getVector(td, awesomeness), "lambda", test=TRUE))
 #' treedply(td, phytools::phenogram(phy, getVector(td, SVL), ftype="off", spread.labels=FALSE))
+#' 
+#' #Using multiPhylo objects
+#' 
+#' data(anolis)
+#' a1<-anolis$phy
+#' a1$tip.label[1]<-"NA"
+#' trees<-list(a1, anolis$phy)
+#' class(trees)<-"multiPhylo"
+#' td<-make.treedata(phy=trees, data=anolis$dat[-c(5:10),])
+#' 
 #' @export
 treedply.treedata <- function(tdObject, ...){
   if(!is.call(substitute(...))){
