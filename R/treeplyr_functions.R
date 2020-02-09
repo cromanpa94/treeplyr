@@ -16,7 +16,7 @@
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
 #' 
-#' #Using multiPhylo objects
+#' # Using multiPhylo objects
 #' 
 #' data(anolis)
 #' a1<-anolis$phy
@@ -140,9 +140,9 @@ make.treedata <- function(phy, data, name_column="detect") {
 #' @examples
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
-#'  tdmutate <- mutate(td, lnSVL = log(SVL), badassery = awesomeness + hostility)
+#' tdmutate <- mutate(td, lnSVL = log(SVL), badassery = awesomeness + hostility)
 #'  
-#' #Using multiPhylo objects
+#' # Using multiPhylo objects
 #' 
 #' data(anolis)
 #' a1<-anolis$phy
@@ -174,7 +174,7 @@ mutate.treedata <- function(.data, ...){
 #' td <- make.treedata(anolis$phy, anolis$dat)
 #' tdslice <- slice(td, 1:5)
 #' 
-#' #Using multiPhylo objects
+#' # Using multiPhylo objects
 #' 
 #' data(anolis)
 #' a1<-anolis$phy
@@ -216,7 +216,8 @@ slice.treedata <- function(.data, ...){
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
 #' tdselect <- select(td, SVL, awesomeness)
-#' #Using multiPhylo objects
+#' 
+#' # Using multiPhylo objects
 #' 
 #' data(anolis)
 #' a1<-anolis$phy
@@ -248,7 +249,8 @@ select.treedata <- function(.data, ...){
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
 #' tdselect <- select(td, SVL, awesomeness)
-#' #Using multiPhylo objects
+#' 
+#' # Using multiPhylo objects
 #' 
 #' data(anolis)
 #' a1<-anolis$phy
@@ -281,7 +283,8 @@ select.treedata <- function(.data, ...){
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat, name_column=1)
 #' tdfilter <- filter(td, island=="Cuba", SVL > 3.5)
-#' #Using multiPhylo objects
+#' 
+#' # Using multiPhylo objects
 #' 
 #' data(anolis)
 #' a1<-anolis$phy
@@ -503,7 +506,7 @@ reorder <- function(tdObject, ...){
 #' td <- make.treedata(anolis$phy, anolis$dat)
 #' td <- reorder(td, "postorder")
 #' 
-#' #Using multiPhylo objects
+#' # Using multiPhylo objects
 #' 
 #' data(anolis)
 #' a1<-anolis$phy
@@ -652,7 +655,7 @@ treedply <- function(tdObject, ...){
 #' treedply(td, phytools::phylosig(phy, getVector(td, awesomeness), "lambda", test=TRUE))
 #' treedply(td, phytools::phenogram(phy, getVector(td, SVL), ftype="off", spread.labels=FALSE))
 #' 
-#' #Using multiPhylo objects
+#' # Using multiPhylo objects
 #' 
 #' data(anolis)
 #' a1<-anolis$phy

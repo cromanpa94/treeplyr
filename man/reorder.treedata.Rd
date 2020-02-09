@@ -7,7 +7,8 @@
 \usage{
 reorder(tdObject, ...)
 
-\method{reorder}{treedata}(tdObject, order = "postorder", index.only = FALSE, ...)
+\method{reorder}{treedata}(tdObject, order = "postorder",
+  index.only = FALSE, ...)
 }
 \arguments{
 \item{tdObject}{An object of class \code{treedata}}
@@ -27,7 +28,17 @@ Reorders a \code{treedata} object. Both the tips and the data are automatically 
 \examples{
 data(anolis)
 td <- make.treedata(anolis$phy, anolis$dat)
- td <- reorder(td, "postorder")
+td <- reorder(td, "postorder")
+
+# Using multiPhylo objects
+
+data(anolis)
+a1<-anolis$phy
+a1$tip.label[1]<-"NA"
+trees<-list(a1, anolis$phy)
+class(trees)<-"multiPhylo"
+td<-make.treedata(phy=trees, data=anolis$dat[-c(5:10),])
+td <- reorder(td, "postorder")
 }
 \seealso{
 \code{\link{reorder.phylo}}

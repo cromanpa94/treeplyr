@@ -29,12 +29,12 @@ and data remain intact. The object can be manipulated using \code{dplyr} functio
 data(anolis)
 td <- make.treedata(anolis$phy, anolis$dat)
 
+# Using multiPhylo objects
+
 data(anolis)
 a1<-anolis$phy
 a1$tip.label[1]<-"NA"
 trees<-list(a1, anolis$phy)
 class(trees)<-"multiPhylo"
-phy=trees
-data=anolis$dat
-td<-make.treedata(phy=trees, data=data[-c(5:10),])
+td<-make.treedata(phy=trees, data=anolis$dat[-c(5:10),])
 }

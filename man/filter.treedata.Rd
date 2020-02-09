@@ -23,7 +23,17 @@ see \code{\link{filter}}.
 \examples{
 data(anolis)
 td <- make.treedata(anolis$phy, anolis$dat, name_column=1)
- tdfilter <- filter(td, island=="Cuba", SVL > 3.5)
+tdfilter <- filter(td, island=="Cuba", SVL > 3.5)
+
+# Using multiPhylo objects
+
+data(anolis)
+a1<-anolis$phy
+a1$tip.label[1]<-"NA"
+trees<-list(a1, anolis$phy)
+class(trees)<-"multiPhylo"
+td<-make.treedata(phy=trees, data=anolis$dat[-c(5:10),])
+tdfilter <- filter(td, island=="Cuba", SVL > 3.5)
 }
 \seealso{
 \code{\link{filter}}

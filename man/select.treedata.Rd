@@ -14,6 +14,10 @@
 \item{.data}{An object of class \code{treedata}}
 
 \item{...}{Additional arguments to select columns}
+
+\item{.data}{An object of class \code{treedata}}
+
+\item{...}{Additional arguments to select columns}
 }
 \value{
 An object of class \code{treedata} with specified variables selected.
@@ -31,9 +35,29 @@ see \code{\link{select}}.
 data(anolis)
 td <- make.treedata(anolis$phy, anolis$dat)
 tdselect <- select(td, SVL, awesomeness)
+
+# Using multiPhylo objects
+
+data(anolis)
+a1<-anolis$phy
+a1$tip.label[1]<-"NA"
+trees<-list(a1, anolis$phy)
+class(trees)<-"multiPhylo"
+td<-make.treedata(phy=trees, data=anolis$dat[-c(5:10),])
+tdselect <- select(td, SVL, awesomeness)
 data(anolis)
 td <- make.treedata(anolis$phy, anolis$dat)
- tdselect <- select(td, SVL, awesomeness)
+tdselect <- select(td, SVL, awesomeness)
+
+# Using multiPhylo objects
+
+data(anolis)
+a1<-anolis$phy
+a1$tip.label[1]<-"NA"
+trees<-list(a1, anolis$phy)
+class(trees)<-"multiPhylo"
+td<-make.treedata(phy=trees, data=anolis$dat[-c(5:10),])
+tdselect <- select(td, SVL, awesomeness)
 }
 \seealso{
 \code{\link{select}}

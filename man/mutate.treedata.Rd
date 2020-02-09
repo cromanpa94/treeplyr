@@ -22,7 +22,17 @@ This function can be used to add new variables to a treedata object; see \code{\
 \examples{
 data(anolis)
 td <- make.treedata(anolis$phy, anolis$dat)
- tdmutate <- mutate(td, lnSVL = log(SVL), badassery = awesomeness + hostility)
+tdmutate <- mutate(td, lnSVL = log(SVL), badassery = awesomeness + hostility)
+ 
+# Using multiPhylo objects
+
+data(anolis)
+a1<-anolis$phy
+a1$tip.label[1]<-"NA"
+trees<-list(a1, anolis$phy)
+class(trees)<-"multiPhylo"
+td<-make.treedata(phy=trees, data=anolis$dat[-c(5:10),])
+tdmutate <- mutate(td, lnSVL = log(SVL), badassery = awesomeness + hostility)
 }
 \seealso{
 \code{\link{mutate}}

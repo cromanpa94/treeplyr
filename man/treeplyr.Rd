@@ -3,6 +3,7 @@
 \docType{package}
 \name{treeplyr}
 \alias{treeplyr}
+\alias{treeplyr-package}
 \title{treeplyr: 'dplyr' Functionality for Matched Tree and Data Objects}
 \description{
 Matches phylogenetic trees and trait data, and allows simultaneous 

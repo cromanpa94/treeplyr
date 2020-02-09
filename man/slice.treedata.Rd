@@ -20,8 +20,17 @@ This function can be used to drop tips from tree and data; see \code{\link{slice
 \examples{
 data(anolis)
 td <- make.treedata(anolis$phy, anolis$dat)
- tdslice <- slice(td, 1:5)
-tdslice
+tdslice <- slice(td, 1:5)
+
+# Using multiPhylo objects
+
+data(anolis)
+a1<-anolis$phy
+a1$tip.label[1]<-"NA"
+trees<-list(a1, anolis$phy)
+class(trees)<-"multiPhylo"
+td<-make.treedata(phy=trees, data=anolis$dat[-c(5:10),])
+tdslice <- slice(td, 1:5)
 }
 \seealso{
 \code{\link{slice}}
