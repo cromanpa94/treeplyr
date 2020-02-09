@@ -235,6 +235,40 @@ select.treedata <- function(.data, ...){
   return(.data)
 }
 
+#' Function for selecting columns from an object of class \code{treedata}
+#' 
+#' This function can be used to select a subset of variables (columns) from a treedata object; 
+#' see \code{\link{select}}.
+#' 
+#' @aliases select.grouped_treedata
+#' @param .data An object of class \code{treedata}
+#' @param ... Additional arguments to select columns
+#' @return An object of class \code{treedata} with specified variables selected. 
+#' @seealso \code{\link{select_}}
+#' @examples
+#' data(anolis)
+#' td <- make.treedata(anolis$phy, anolis$dat)
+#' tdselect <- select(td, SVL, awesomeness)
+#' 
+#' # Using multiPhylo objects
+#' 
+#' data(anolis)
+#' a1<-anolis$phy
+#' a1$tip.label[1]<-"NA"
+#' trees<-list(a1, anolis$phy)
+#' class(trees)<-"multiPhylo"
+#' td<-make.treedata(phy=trees, data=anolis$dat[-c(5:10),])
+#' tdselect <- select(td, SVL, awesomeness)
+#' @export
+select.treedata <- function(.data, ...){
+  #dots <- all_dots(.dots, ...)
+  #dat <- select(.data$dat, ...) #select_vars(names(.data$dat), !(!(!quos(...))))
+  #dat <- .data$dat[, vars, drop = FALSE]
+  #row.names(dat) <- attributes(.data)$tip.label
+  .data$dat <- select(.data$dat, ...)
+  return(.data)
+}
+
 #' Function for filtering rows from an object of class \code{treedata}
 #' 
 #' This function can be used to select a subset of species (rows) from a treedata object; 
