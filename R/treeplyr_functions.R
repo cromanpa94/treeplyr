@@ -637,11 +637,11 @@ treedply <- function(tdObject, ...){
 #' treedply(td, phytools::phylosig(phy, getVector(td, awesomeness), "lambda", test=TRUE))
 #' treedply(td, phytools::phenogram(phy, getVector(td, SVL), ftype="off", spread.labels=FALSE))
 #' 
-#' # Using multiPhylo objects
+#' # Using multiPhylo objects (Need to fix: fitContinuous/phenogram)
 #' 
 #' data(anolisMulti)
 #' td<-make.treedata(phy=anolisMulti$phy, data=anolisMulti$dat)
-#' treedply(td, geiger::fitContinuous(phy, getVector(td, SVL), model="BM", ncores=1))
+#' treedply(td, phytools::phylosig(phy, getVector(td, awesomeness), "lambda", test=TRUE))
 #' 
 #' @export
 treedply.treedata <- function(tdObject, ...){
