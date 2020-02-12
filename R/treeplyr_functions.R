@@ -144,12 +144,8 @@ make.treedata <- function(phy, data, name_column="detect") {
 #'  
 #' # Using multiPhylo objects
 #' 
-#' data(anolis)
-#' a1<-anolis$phy
-#' a1$tip.label[1]<-"NA"
-#' trees<-list(a1, anolis$phy)
-#' class(trees)<-"multiPhylo"
-#' td<-make.treedata(phy=trees, data=anolis$dat[-c(5:10),])
+#' data(anolisMulti)
+#' td<-make.treedata(phy=anolisMulti$phy, data=anolisMulti$dat)
 #' tdmutate <- mutate(td, lnSVL = log(SVL), badassery = awesomeness + hostility)
 #' @export
 
@@ -176,12 +172,8 @@ mutate.treedata <- function(.data, ...){
 #' 
 #' # Using multiPhylo objects
 #' 
-#' data(anolis)
-#' a1<-anolis$phy
-#' a1$tip.label[1]<-"NA"
-#' trees<-list(a1, anolis$phy)
-#' class(trees)<-"multiPhylo"
-#' td<-make.treedata(phy=trees, data=anolis$dat[-c(5:10),])
+#' data(anolisMulti)
+#' td<-make.treedata(phy=anolisMulti$phy, data=anolisMulti$dat)
 #' tdslice <- slice(td, 1:5)
 #' @export
 
@@ -219,12 +211,8 @@ slice.treedata <- function(.data, ...){
 #' 
 #' # Using multiPhylo objects
 #' 
-#' data(anolis)
-#' a1<-anolis$phy
-#' a1$tip.label[1]<-"NA"
-#' trees<-list(a1, anolis$phy)
-#' class(trees)<-"multiPhylo"
-#' td<-make.treedata(phy=trees, data=anolis$dat[-c(5:10),])
+#' data(anolisMulti)
+#' td<-make.treedata(phy=anolisMulti$phy, data=anolisMulti$dat)
 #' tdselect <- select(td, SVL, awesomeness)
 #' @export
 select.treedata <- function(.data, ...){
@@ -252,12 +240,8 @@ select.treedata <- function(.data, ...){
 #' 
 #' # Using multiPhylo objects
 #' 
-#' data(anolis)
-#' a1<-anolis$phy
-#' a1$tip.label[1]<-"NA"
-#' trees<-list(a1, anolis$phy)
-#' class(trees)<-"multiPhylo"
-#' td<-make.treedata(phy=trees, data=anolis$dat[-c(5:10),])
+#' data(anolisMulti)
+#' td<-make.treedata(phy=anolisMulti$phy, data=anolisMulti$dat)
 #' tdselect <- select(td, SVL, awesomeness)
 #' @export
 select.treedata <- function(.data, ...){
@@ -286,12 +270,8 @@ select.treedata <- function(.data, ...){
 #' 
 #' # Using multiPhylo objects
 #' 
-#' data(anolis)
-#' a1<-anolis$phy
-#' a1$tip.label[1]<-"NA"
-#' trees<-list(a1, anolis$phy)
-#' class(trees)<-"multiPhylo"
-#' td<-make.treedata(phy=trees, data=anolis$dat[-c(5:10),])
+#' data(anolisMulti)
+#' td<-make.treedata(phy=anolisMulti$phy, data=anolisMulti$dat)
 #' tdfilter <- filter(td, island=="Cuba", SVL > 3.5)
 #' @export
 filter.treedata <- function(.data, ...){
@@ -336,14 +316,17 @@ filter.treedata <- function(.data, ...){
 #'  summarize(tdGrouped, ntips = length(phy$tip.label), 
 #'     totalBL = sum(phy$edge.length), meanSVL = mean(SVL), sdSVL = sd(SVL))
 #' 
-#' #For multiPhylo
+#' # For multiPhylo objects
 #'
-#'  phy=list(anolis$phy,anolis$phy)
-#'  class(phy)<-'multiPhylo
-#'  td <- make.treedata(phy, anolis$dat)
-#'  summarize(td, ntips = length(phy[[1]]$tip.label), meanSVL = mean(SVL), sdSVL = sd(SVL))
-#'  tdGrouped <- group_by(td, ecomorph)
-#'  summarize(tdGrouped, ntips = length(phy[[1]]$tip.label), 
+#' data(anolisMulti)
+#' td<-make.treedata(phy=anolisMulti$phy, data=anolisMulti$dat)
+#' 
+#' # If any of the summarized parameters involve the $phy object, a tree number 
+#' #especified (see below)
+#' 
+#' summarize(td, ntips = length(phy[[1]]$tip.label), meanSVL = mean(SVL), sdSVL = sd(SVL))
+#' tdGrouped <- group_by(td, ecomorph)
+#' summarize(tdGrouped, ntips = length(phy[[1]]$tip.label), 
 #'     totalBL = sum(phy[[1]]$edge.length), meanSVL = mean(SVL), sdSVL = sd(SVL))
 #'     
 #' @export
@@ -467,9 +450,8 @@ summarise.grouped_treedata <- function(.data, ...){
 #'     
 #' #For multiPhylo
 #'
-#'  phy=list(anolis$phy,anolis$phy)
-#'  class(phy)<-'multiPhylo
-#'  td <- make.treedata(phy, anolis$dat)
+#'  data(anolisMulti)
+#'  td<-make.treedata(phy=anolisMulti$phy, data=anolisMulti$dat)
 #'  tdGrouped <- group_by(td, ecomorph)
 #'  summarize(tdGrouped, ntips = length(phy[[1]]$tip.label), 
 #'     totalBL = sum(phy[[1]]$edge.length), meanSVL = mean(SVL), sdSVL = sd(SVL))
@@ -506,14 +488,8 @@ reorder <- function(tdObject, ...){
 #' td <- make.treedata(anolis$phy, anolis$dat)
 #' td <- reorder(td, "postorder")
 #' 
-#' # Using multiPhylo objects
-#' 
-#' data(anolis)
-#' a1<-anolis$phy
-#' a1$tip.label[1]<-"NA"
-#' trees<-list(a1, anolis$phy)
-#' class(trees)<-"multiPhylo"
-#' td<-make.treedata(phy=trees, data=anolis$dat[-c(5:10),])
+#' data(anolisMulti)
+#' td<-make.treedata(phy=anolisMulti$phy, data=anolisMulti$dat)
 #' td <- reorder(td, "postorder")
 #' @export
 reorder.treedata <- function(tdObject, order="postorder", index.only=FALSE, ...){
@@ -601,6 +577,12 @@ treeply.treedata <- function(tdObject, FUN, ...){
 #' @examples
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
+#'td %>% forceNumeric(.) %>% tdapply(., 2, phytools::phylosig, tree=phy)
+#'  
+#'  #For multiPhylo
+#'  
+#' data(anolisMulti)
+#' td<-make.treedata(phy=anolisMulti$phy, data=anolisMulti$dat)
 #'  td %>% forceNumeric(.) %>% tdapply(., 2, phytools::phylosig, tree=phy)
 #' @export
 tdapply <- function(tdObject, MARGIN, FUN, ...){
@@ -657,12 +639,9 @@ treedply <- function(tdObject, ...){
 #' 
 #' # Using multiPhylo objects
 #' 
-#' data(anolis)
-#' a1<-anolis$phy
-#' a1$tip.label[1]<-"NA"
-#' trees<-list(a1, anolis$phy)
-#' class(trees)<-"multiPhylo"
-#' td<-make.treedata(phy=trees, data=anolis$dat[-c(5:10),])
+#' data(anolisMulti)
+#' td<-make.treedata(phy=anolisMulti$phy, data=anolisMulti$dat)
+#' treedply(td, geiger::fitContinuous(phy, getVector(td, SVL), model="BM", ncores=1))
 #' 
 #' @export
 treedply.treedata <- function(tdObject, ...){
