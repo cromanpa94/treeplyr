@@ -23,6 +23,22 @@ This function can be used to group a treedata object by some factor.
 \details{
 Groups the data frame and phylogeny by one of the factors in the data table.
 }
+\examples{
+data(anolis)
+td <- make.treedata(anolis$phy, anolis$dat)
+ tdGrouped <- group_by(td, ecomorph)
+ summarize(tdGrouped, ntips = length(phy$tip.label), 
+    totalBL = sum(phy$edge.length), meanSVL = mean(SVL), sdSVL = sd(SVL))
+    
+#For multiPhylo
+
+ data(anolisMulti)
+ td<-make.treedata(phy=anolisMulti$phy, data=anolisMulti$dat)
+ tdGrouped <- group_by(td, ecomorph)
+ summarize(tdGrouped, ntips = length(phy[[1]]$tip.label), 
+    totalBL = sum(phy[[1]]$edge.length), meanSVL = mean(SVL), sdSVL = sd(SVL))
+    
+}
 \seealso{
 \code{\link{summarize}}
 }

@@ -24,12 +24,8 @@ tdslice <- slice(td, 1:5)
 
 # Using multiPhylo objects
 
-data(anolis)
-a1<-anolis$phy
-a1$tip.label[1]<-"NA"
-trees<-list(a1, anolis$phy)
-class(trees)<-"multiPhylo"
-td<-make.treedata(phy=trees, data=anolis$dat[-c(5:10),])
+data(anolisMulti)
+td<-make.treedata(phy=anolisMulti$phy, data=anolisMulti$dat)
 tdslice <- slice(td, 1:5)
 }
 \seealso{

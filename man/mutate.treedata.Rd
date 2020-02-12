@@ -26,12 +26,8 @@ tdmutate <- mutate(td, lnSVL = log(SVL), badassery = awesomeness + hostility)
  
 # Using multiPhylo objects
 
-data(anolis)
-a1<-anolis$phy
-a1$tip.label[1]<-"NA"
-trees<-list(a1, anolis$phy)
-class(trees)<-"multiPhylo"
-td<-make.treedata(phy=trees, data=anolis$dat[-c(5:10),])
+data(anolisMulti)
+td<-make.treedata(phy=anolisMulti$phy, data=anolisMulti$dat)
 tdmutate <- mutate(td, lnSVL = log(SVL), badassery = awesomeness + hostility)
 }
 \seealso{

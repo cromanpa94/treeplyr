@@ -282,7 +282,7 @@ filter.treedata <- function(.data, ...){
 #' @examples
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
-#'  summarize(td, ntips = length(phy[[1]]$tip.label), meanSVL = mean(SVL), sdSVL = sd(SVL))
+#'  summarize(td, ntips = length(phy$tip.label), meanSVL = mean(SVL), sdSVL = sd(SVL))
 #'  tdGrouped <- group_by(td, ecomorph)
 #'  summarize(tdGrouped, ntips = length(phy$tip.label), 
 #'     totalBL = sum(phy$edge.length), meanSVL = mean(SVL), sdSVL = sd(SVL))
@@ -291,9 +291,6 @@ filter.treedata <- function(.data, ...){
 #'
 #' data(anolisMulti)
 #' td<-make.treedata(phy=anolisMulti$phy, data=anolisMulti$dat)
-#' 
-#' # If any of the summarized parameters involve the $phy object, a tree number 
-#' #especified (see below)
 #' 
 #' summarize(td, ntips = length(phy[[1]]$tip.label), meanSVL = mean(SVL), sdSVL = sd(SVL))
 #' tdGrouped <- group_by(td, ecomorph)
@@ -416,7 +413,7 @@ summarise.grouped_treedata <- function(.data, ...){
 #' data(anolis)
 #' td <- make.treedata(anolis$phy, anolis$dat)
 #'  tdGrouped <- group_by(td, ecomorph)
-#'  summarize(tdGrouped, ntips = length(phy[[1]]$tip.label), 
+#'  summarize(tdGrouped, ntips = length(phy$tip.label), 
 #'     totalBL = sum(phy$edge.length), meanSVL = mean(SVL), sdSVL = sd(SVL))
 #'     
 #' #For multiPhylo

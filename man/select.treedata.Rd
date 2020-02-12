@@ -3,31 +3,19 @@
 \name{select.treedata}
 \alias{select.treedata}
 \alias{select_.grouped_treedata}
-\alias{select.grouped_treedata}
 \title{Function for selecting columns from an object of class \code{treedata}}
 \usage{
-\method{select}{treedata}(.data, ...)
-
 \method{select}{treedata}(.data, ...)
 }
 \arguments{
 \item{.data}{An object of class \code{treedata}}
 
 \item{...}{Additional arguments to select columns}
-
-\item{.data}{An object of class \code{treedata}}
-
-\item{...}{Additional arguments to select columns}
 }
 \value{
 An object of class \code{treedata} with specified variables selected.
-
-An object of class \code{treedata} with specified variables selected.
 }
 \description{
-This function can be used to select a subset of variables (columns) from a treedata object; 
-see \code{\link{select}}.
-
 This function can be used to select a subset of variables (columns) from a treedata object; 
 see \code{\link{select}}.
 }
@@ -38,29 +26,10 @@ tdselect <- select(td, SVL, awesomeness)
 
 # Using multiPhylo objects
 
-data(anolis)
-a1<-anolis$phy
-a1$tip.label[1]<-"NA"
-trees<-list(a1, anolis$phy)
-class(trees)<-"multiPhylo"
-td<-make.treedata(phy=trees, data=anolis$dat[-c(5:10),])
-tdselect <- select(td, SVL, awesomeness)
-data(anolis)
-td <- make.treedata(anolis$phy, anolis$dat)
-tdselect <- select(td, SVL, awesomeness)
-
-# Using multiPhylo objects
-
-data(anolis)
-a1<-anolis$phy
-a1$tip.label[1]<-"NA"
-trees<-list(a1, anolis$phy)
-class(trees)<-"multiPhylo"
-td<-make.treedata(phy=trees, data=anolis$dat[-c(5:10),])
+data(anolisMulti)
+td<-make.treedata(phy=anolisMulti$phy, data=anolisMulti$dat)
 tdselect <- select(td, SVL, awesomeness)
 }
 \seealso{
 \code{\link{select}}
-
-\code{\link{select_}}
 }

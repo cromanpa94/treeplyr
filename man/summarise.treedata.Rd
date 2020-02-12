@@ -26,6 +26,25 @@ This function can be used to summarize a treedata object.
 Summarizing \code{treedata} objects allows expressions using the objects \code{phy}. The \code{treedata}
 object can also be grouped, with summary statistics being applied to the pruned groups and phylogenies.
 }
+\examples{
+data(anolis)
+td <- make.treedata(anolis$phy, anolis$dat)
+ summarize(td, ntips = length(phy$tip.label), meanSVL = mean(SVL), sdSVL = sd(SVL))
+ tdGrouped <- group_by(td, ecomorph)
+ summarize(tdGrouped, ntips = length(phy$tip.label), 
+    totalBL = sum(phy$edge.length), meanSVL = mean(SVL), sdSVL = sd(SVL))
+
+# For multiPhylo objects
+
+data(anolisMulti)
+td<-make.treedata(phy=anolisMulti$phy, data=anolisMulti$dat)
+
+summarize(td, ntips = length(phy[[1]]$tip.label), meanSVL = mean(SVL), sdSVL = sd(SVL))
+tdGrouped <- group_by(td, ecomorph)
+summarize(tdGrouped, ntips = length(phy[[1]]$tip.label), 
+    totalBL = sum(phy[[1]]$edge.length), meanSVL = mean(SVL), sdSVL = sd(SVL))
+    
+}
 \seealso{
 \code{\link{summarize}}, \code{\link{group_by}}
 }
